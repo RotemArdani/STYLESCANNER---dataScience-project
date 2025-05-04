@@ -223,7 +223,6 @@
 //    }
 //}
 package com.example.stylescannerapp;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -239,6 +238,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+import androidx.core.content.ContextCompat;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -252,7 +252,7 @@ import com.google.android.gms.location.LocationServices;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 import java.util.Locale;
 
 import retrofit2.Call;
@@ -260,6 +260,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int PERMISSION_REQUEST_CODE = 100;
 
     private ActivityMainBinding binding;
     private Bitmap bitmap;
@@ -297,6 +299,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        checkAndRequestPermissions();
 
         locationClient = LocationServices.getFusedLocationProviderClient(this);
         viewFlipper = binding.viewFlipper;
@@ -326,6 +329,25 @@ public class MainActivity extends AppCompatActivity {
                 }).show();
     }
 
+    private void checkAndRequestPermissions() {
+        List<String> permissionsNeeded = new ArrayList<>();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+            permissionsNeeded.add(Manifest.permission.CAMERA);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES);
+
+        if (!permissionsNeeded.isEmpty()) {
+            ActivityCompat.requestPermissions(this,
+                    permissionsNeeded.toArray(new String[0]),
+                    PERMISSION_REQUEST_CODE);
+        }
+    }
     private void openCamera() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 200);
@@ -463,7 +485,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 200) {
+
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            for (int i = 0; i < permissions.length; i++) {
+                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("Permissions", permissions[i] + " granted");
+                } else {
+                    Log.e("Permissions", permissions[i] + " denied");
+                }
+            }
+        } else if (requestCode == 200) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 openCamera();
             } else {

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app.services.decode64 import decode_base64_image 
-from app.models.cnn_model import process_with_cnn  
-from app.models.main_model import make_prediction  
+from app.services.decode64 import decode_base64_image
+from app.models.cnn_model import process_with_cnn
+from app.models.main_model import make_prediction
 
 routes_bp = Blueprint('routes', __name__)
 
@@ -11,7 +11,6 @@ def predict_image():
         data = request.get_json()
         print("[DEBUG] Received data:", data)
 
-        # Print what's received
         print("/predictimage endpoint hit")
         print(f"Keys received: {list(data.keys())}")
         print(f"Image (first 100 chars): {data.get('image', '')[:100]}")
@@ -23,17 +22,19 @@ def predict_image():
 
         image_decoded = decode_base64_image(image_base64)
 
-        # CNN
-        cnn_output = process_with_cnn(image_decoded)
+        cnn_features = process_with_cnn(image_decoded)
 
-        # prediction
-        min_range, max_range = make_prediction(cnn_output)
+        cnn_vector = cnn_features.pop("cnn_features", [])
+        for i, val in enumerate(cnn_vector):
+            cnn_features[f"cnn_feature_{i}"] = val
+
+        min_range, max_range = make_prediction(cnn_features)
 
         return jsonify({
-            "min_range": min_range,
-            "max_range": max_range
+            "min_range": int(min_range),
+            "max_range": int(max_range)
         })
 
     except Exception as e:
-        print(f"Server error: {str(e)}")  # Log the error
+        print(f"Server error: {str(e)}")
         return jsonify({"error": str(e)}), 500

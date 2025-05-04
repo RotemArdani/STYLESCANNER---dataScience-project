@@ -11,7 +11,7 @@ def load_main_model():
 
     with open(model_path, "rb") as f:
         model = pickle.load(f)
-    
+
     return model
 
 def make_prediction(input_data):

@@ -20,7 +20,18 @@ def load_cnn_model():
         print(f"[DEBUG] Failed to load CNN model: {e}")
         raise Exception(f"Error loading CNN model: {e}")
 
-# def process_with_cnn(image):
+# Temporary function to process
+def process_with_cnn(image_decoded):
+    return {
+        'Brand': 'Under Armour',
+        'Category': 'Dress',
+        'Color': 'Green',
+        'Size': 'S',
+        'Material': 'Denim'
+    }
+
+# Real function - dont delete !
+# def process_with_cnn(image_decoded):
 #     try:
 #         model = load_cnn_model()
 #
@@ -41,9 +52,12 @@ def load_cnn_model():
 #         print(f"[DEBUG] Error inside process_with_cnn: {e}")
 #         raise Exception(f"Error processing image with CNN: {e}")
 
-def process_with_cnn(image):
-    try:
-        dummy_output = torch.tensor([[0.7, 0.3]])
-        return dummy_output
-    except Exception as e:
-        raise Exception(f"Error processing image with CNN: {e}")
+
+
+# Topaz's Checks
+# def process_with_cnn(image):
+#     try:
+#         dummy_output = torch.tensor([[0.7, 0.3]])
+#         return dummy_output
+#     except Exception as e:
+#         raise Exception(f"Error processing image with CNN: {e}")

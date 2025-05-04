@@ -1,58 +1,86 @@
 <ViewFlipper xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/viewFlipper"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true">
-
-    <!-- Main Screen -->
-    <LinearLayout
-        android:id="@+id/frame_main_screen"
+    <FrameLayout
+        android:id="@+id/rootFrame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/titleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="StyleScanner"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
+        <ImageView
+            android:id="@+id/bgImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/main_screen"
+            android:scaleType="centerCrop" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000" /> <!-- שחור 50% שקוף -->
+
+        <!-- Main Screen -->
+        <LinearLayout
+            android:id="@+id/frame_main_screen"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:gravity="center"
-            android:layout_marginBottom="24dp" />
+            android:orientation="vertical"
+            android:padding="24dp">
 
-        <TextView
-            android:id="@+id/instructionText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Do you know how much your style is worth today?\nLet's find out!"
-            android:textSize="18sp"
-            android:textColor="#555555"
-            android:gravity="center"
-            android:layout_marginBottom="32dp" />
+            <TextView
+                android:id="@+id/titleText"
+                android:layout_width="327dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:fontFamily="@font/limelight_regular"
+                android:gravity="center"
+                android:letterSpacing="0.05"
+                android:padding="8dp"
+                android:text="StyleScanner"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:textColor="#EA80FC"/>
 
-        <Button
-            android:id="@+id/selectImageButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Take a Picture"
-            android:textSize="18sp"
-            android:padding="12dp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#FF4081" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/instructionText"
+                android:layout_width="wrap_content"
+                android:layout_height="87dp"
+                android:layout_marginBottom="32dp"
+                android:fontFamily="@font/winkyrough_regular"
+                android:gravity="center"
+                android:text="Do you know how much your style is worth today?\nLet's find out!"
+                android:textColor="#E1BEE7"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/selectImageButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#FF4081"
+                android:padding="12dp"
+                android:text="Show us"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:fontFamily="@font/winkyrough_regular"
+                />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
     <!-- Loading Screen -->
     <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/frame_loading_screen"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="24dp">
+        android:padding="24dp"
+        android:background="@drawable/loading_screen">
 
         <TextView
             android:id="@+id/loadingText"
@@ -60,9 +88,10 @@
             android:layout_height="wrap_content"
             android:text="What a stunning style!\nLet's see how much it's worth:"
             android:textSize="20sp"
-            android:textColor="#000000"
             android:gravity="center"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="24dp"
+            android:textColor="#795548"
+            android:fontFamily="@font/winkyrough_regular"/>
 
         <ImageView
             android:id="@+id/uploadedImage"
@@ -77,7 +106,6 @@
             android:layout_height="wrap_content"
             android:indeterminate="true" />
 
-        <!-- Try Again Button on Loading Screen -->
         <Button
             android:id="@+id/tryAgainButtonLoading"
             android:layout_width="wrap_content"
@@ -87,8 +115,9 @@
             android:textSize="16sp"
             android:backgroundTint="#FF4081"
             android:layout_marginTop="24dp"
-            android:visibility="gone" />
+            android:visibility="gone"/>
     </LinearLayout>
+
 
     <!-- Result Screen -->
     <LinearLayout
@@ -97,7 +126,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="24dp">
+        android:padding="24dp"
+        android:background="@drawable/loading_screen">
 
         <TextView
             android:id="@+id/resultTitle"
@@ -106,9 +136,10 @@
             android:text="Your Style is Worth:"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#000000"
+            android:textColor="#795548"
             android:gravity="center"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            />
 
         <ImageView
             android:id="@+id/resultImage"
@@ -123,7 +154,7 @@
             android:layout_height="wrap_content"
             android:text="$XX - $YY"
             android:textSize="20sp"
-            android:textColor="#555555"
+            android:textColor="#795548"
             android:gravity="center"
             android:layout_marginBottom="20dp" />
 
@@ -134,8 +165,9 @@
             android:text="Try Again"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
-            android:backgroundTint="#FF4081"
+            android:backgroundTint="#F06292"
             android:layout_marginTop="24dp" />
     </LinearLayout>
+
 
 </ViewFlipper>
