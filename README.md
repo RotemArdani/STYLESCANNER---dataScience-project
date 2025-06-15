@@ -8,6 +8,12 @@ The solution includes a full-stack architecture:
 - **Frontend**: A user-friendly interface for uploading images and viewing price predictions.
 - **Backend**: A Flask-based API that processes images using pre-trained models (CNN and XGBoost) and returns predicted price ranges.
 
+<p align="center">
+  <img src="Frontend/app/src/main/res/drawable/stylescannerDemo.png" alt="Demo" width="300" height="400"/>
+  <img src="Frontend/app/src/main/res/drawable/stylescannerPoster.png" alt="Poster" width="300" height="400"/>
+</p>
+
+
 
 ## System Components
 
