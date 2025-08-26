@@ -7,4 +7,5 @@ xgboost
 scikit-learn
 pandas
 numpy
-
+clarifai>=11.0.0
+requests

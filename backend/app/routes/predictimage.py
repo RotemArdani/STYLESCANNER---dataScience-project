@@ -1,7 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.services.decode64 import decode_base64_image
-from app.models.cnn_model import process_with_cnn
-from app.models.main_model import make_prediction
+from app.models.clarifai_api import predict_apparel_base64
 
 routes_bp = Blueprint('routes', __name__)
 
@@ -17,24 +15,25 @@ def predict_image():
         print(f"Country: {data.get('country')}, City: {data.get('locality')}")
 
         image_base64 = data.get("image")
+
         if not image_base64:
             return jsonify({"error": "No image provided"}), 400
+        
+        prediction = predict_apparel_base64(image_base64)
 
-        image_decoded = decode_base64_image(image_base64)
+        # return jsonify(prediction)
 
-        cnn_features = process_with_cnn(image_decoded)
-
-        cnn_vector = cnn_features.pop("cnn_features", [])
-        for i, val in enumerate(cnn_vector):
-            cnn_features[f"cnn_feature_{i}"] = val
-
-        min_range, max_range = make_prediction(cnn_features)
+        # TODO - need to see what main_model gets
+        # min_range, max_range = make_prediction(prediction)
+        # return jsonify({
+        #     "min_range": int(min_range),
+        #     "max_range": int(max_range)
+        # })
 
         return jsonify({
-            "min_range": int(min_range),
-            "max_range": int(max_range)
+            "min_range": int(5),
+            "max_range": int(11)
         })
-
     except Exception as e:
         print(f"Server error: {str(e)}")
         return jsonify({"error": str(e)}), 500

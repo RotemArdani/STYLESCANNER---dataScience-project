@@ -20,3 +20,14 @@ Frontend/.cxx
 
 # Ignore local properties
 Frontend/local.properties
+
+backend/.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+*.log
+
