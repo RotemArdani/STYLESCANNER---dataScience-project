@@ -2,9 +2,10 @@ import os
 from flask import Flask
 from dotenv import load_dotenv
 from flask_cors import CORS
-from app.routes.predictimage import routes_bp  
 
 load_dotenv()
+
+from app.routes.predictimage import routes_bp  
 
 app = Flask(__name__)
 

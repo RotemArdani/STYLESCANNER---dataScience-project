@@ -1,36 +1,52 @@
-import os
+import pandas as pd
+import numpy as np
 import pickle
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
+MODEL_PATH = os.path.join(os.path.dirname(__file__), 'xgboost_model.pkl')
 
-def load_main_model():
-    model_path = os.getenv("MODEL_PATH")
-    if not model_path:
-        raise Exception("MODEL_PATH is not set in .env file.")
+with open(MODEL_PATH, 'rb') as f:
+    loaded_model = pickle.load(f)
 
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)
 
-    return model
+ENCODERS_PATH = os.path.join(os.path.dirname(__file__), 'label_encoders.pkl')
+# Load the label encoders
+with open(ENCODERS_PATH, "rb") as f:
+    loaded_label_encoders = pickle.load(f)
 
-def make_prediction(input_data):
-    try:
-        model = load_main_model()
 
-        prediction = model.predict(input_data)
+def preprocess_new_data(new_data_dict, label_encoders):
+    """
+    Preprocesses new data using the loaded label encoders.
 
-        min_range = prediction.min().item()
-        max_range = prediction.max().item()
+    Args:
+        new_data_dict (dict): A dictionary containing the new data
+                              (keys should match the original categorical columns).
+        label_encoders (dict): A dictionary containing the fitted label encoders.
 
-        return min_range, max_range
-    except Exception as e:
-        raise Exception(f"Error in prediction: {e}")
+    Returns:
+        pd.DataFrame: The preprocessed data as a pandas DataFrame.
+    """
+    new_df = pd.DataFrame([new_data_dict])
+    for col, encoder in label_encoders.items():
+        # Handle unseen labels during inference
+        new_df[col] = new_df[col].apply(lambda x: encoder.transform([x])[0] if x in encoder.classes_ else -1) # Or some other strategy for unseen data
+    return new_df
 
-# def make_prediction(output):
-#     try:
-#         min_range = 50
-#         max_range = 100
-#         return min_range, max_range
-#     except Exception as e:
-#         raise Exception(f"Error in prediction: {e}")
+
+# Example new data (replace with your actual new data)
+# new_sample_data = {'Section': 'WOMAN',
+#                    'Product Colour': 'BLACK',
+#                    'Brand': 'ASOS DESIGN',
+#                    'Product Type': 'Dress'}
+
+# Preprocess the new data
+def xgboost_predict(new_sample_data):
+    preprocessed_new_data = preprocess_new_data(new_sample_data, loaded_label_encoders)
+
+    # Make a prediction
+    predicted_price = loaded_model.predict(preprocessed_new_data)
+
+    print(f"Predicted price for the new product: {predicted_price[0]:.2f}")
+
+    return predicted_price
