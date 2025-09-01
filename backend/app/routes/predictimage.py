@@ -45,17 +45,23 @@ def predict_image():
         # Color + Type
         ct_results = get_colerand_type(image_path)
         print(f"ct_results: {ct_results}")
+
+        total_price = 0
         if ct_results:
-            features["Product Type"] = ct_results[0]["ITEM_TYPE"]
-            features["Product Colour"] = ct_results[0]["ITEM_COLOR"]
+            for item in ct_results:
+                features_copy = features.copy()  
+                features_copy["Product Type"] = item["ITEM_TYPE"]
+                features_copy["Product Colour"] = item["ITEM_COLOR"]
 
-        print("[DEBUG] Extracted features:", features)
+                print("[DEBUG] Extracted features for item:", features_copy)
 
-        predicted_price = xgboost_predict(features) 
+                predicted_price = xgboost_predict(features_copy)
+                print(f"[DEBUG] Predicted price for item: {predicted_price}")
 
-        return jsonify({
-            "predicted_price": float(predicted_price[0])
-        })
+                total_price += predicted_price
+
+            print("[DEBUG] Final summed prediction:", total_price)
+            return jsonify({"predicted_price": float(total_price)})
     except Exception as e:
         print(f"Server error: {str(e)}")
         return jsonify({"error": str(e)}), 500

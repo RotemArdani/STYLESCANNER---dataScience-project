@@ -85,8 +85,8 @@ ALLOWED_COLORS = [
 ]
 
 # Create mapping: lowercase -> original
-ITEM_TYPE_MAP =ALLOWED_ITEM_TYPES# {t.lower(): t for t in ALLOWED_ITEM_TYPES}
-COLOR_MAP =ALLOWED_COLORS# {c.lower(): c for c in ALLOWED_COLORS}
+ITEM_TYPE_MAP ={t.lower(): t for t in ALLOWED_ITEM_TYPES}
+COLOR_MAP ={c.lower(): c for c in ALLOWED_COLORS}
 
 
 def analyze_image_for_items_and_colors(image_path):
@@ -207,6 +207,8 @@ def analyze_image_for_items_and_colors(image_path):
                     "bag": "Accessories",
                     "belt": "Accessories",
                     "watch": "Accessories",
+                    "trousers": "Trousers & Leggings",
+                    "leggings": "Trousers & Leggings",
                 }
                 for key, val in fallback_map.items():
                     if key in raw_type.lower():
@@ -214,6 +216,7 @@ def analyze_image_for_items_and_colors(image_path):
                         break
 
             if not matched_type:
+                print("no type")
                 continue  # Skip unknown types
 
             print("br2")
@@ -221,7 +224,7 @@ def analyze_image_for_items_and_colors(image_path):
             # --- Match ITEM_COLOR ---
             matched_color = None
             if raw_color.lower() in COLOR_MAP:
-                matched_color = raw_color.lower()
+                matched_color = COLOR_MAP[raw_color.lower()]
             else:
                 # Try partial match
                 for allowed_lower, original in COLOR_MAP.items():
