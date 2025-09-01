@@ -43,7 +43,7 @@ def predict_image():
         features["Brand"] = pred_Brand(image_path)
 
         # Color + Type
-        ct_results = get_colerand_type(image_path, image_base64)
+        ct_results = get_colerand_type(image_path)
         print(f"ct_results: {ct_results}")
         if ct_results:
             features["Product Type"] = ct_results[0]["ITEM_TYPE"]

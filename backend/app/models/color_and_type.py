@@ -89,7 +89,7 @@ ITEM_TYPE_MAP =ALLOWED_ITEM_TYPES# {t.lower(): t for t in ALLOWED_ITEM_TYPES}
 COLOR_MAP =ALLOWED_COLORS# {c.lower(): c for c in ALLOWED_COLORS}
 
 
-def analyze_image_for_items_and_colors(image_path, image_base64):
+def analyze_image_for_items_and_colors(image_path):
     """
     Analyzes a local image and returns a list of detected items with their colors.
     Both ITEM_TYPE and ITEM_COLOR are mapped to your allowed lists, preserving original casing.
@@ -143,7 +143,7 @@ def analyze_image_for_items_and_colors(image_path, image_base64):
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"image/jpeg;base64,{base64_image}"
+                                "url": f"data:image/jpeg;base64,{base64_image}"
                             }
                         }
                     ]
@@ -158,8 +158,6 @@ def analyze_image_for_items_and_colors(image_path, image_base64):
         raw_response = re.sub(r"```json\s*", "", raw_response)
         raw_response = re.sub(r"```\s*", "", raw_response)
         raw_response = raw_response.strip()
-        print(f"raw_response:{raw_response}")
-
 
         # Parse
         try:
@@ -177,6 +175,7 @@ def analyze_image_for_items_and_colors(image_path, image_base64):
         for item in data:
             raw_type = str(item.get("ITEM_TYPE", "")).strip()
             raw_color = str(item.get("ITEM_COLOR", "")).strip()
+            print("br1")
 
             # --- Match ITEM_TYPE ---
             matched_type = None
@@ -217,10 +216,12 @@ def analyze_image_for_items_and_colors(image_path, image_base64):
             if not matched_type:
                 continue  # Skip unknown types
 
+            print("br2")
+
             # --- Match ITEM_COLOR ---
             matched_color = None
             if raw_color.lower() in COLOR_MAP:
-                matched_color = COLOR_MAP[raw_color.lower()]
+                matched_color = raw_color.lower()
             else:
                 # Try partial match
                 for allowed_lower, original in COLOR_MAP.items():
@@ -229,6 +230,8 @@ def analyze_image_for_items_and_colors(image_path, image_base64):
                         break
                 if not matched_color:
                     matched_color = "MULTI"  # Fallback
+            print("br3")
+
 
             result.append({
                 "ITEM_TYPE": matched_type,
@@ -241,7 +244,7 @@ def analyze_image_for_items_and_colors(image_path, image_base64):
         return []
 
 
-def get_colerand_type(imgpath, image_base64):
-    result = analyze_image_for_items_and_colors(imgpath, image_base64)  # Replace with your path
+def get_colerand_type(imgpath):
+    result = analyze_image_for_items_and_colors(imgpath)  # Replace with your path
     print(json.dumps(result, indent=2))
     return result
