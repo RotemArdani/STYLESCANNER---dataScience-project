@@ -1,296 +1,112 @@
-//package com.example.stylescannerapp;
-//
-//import android.Manifest.permission;
-//import android.content.Intent;
-//import android.content.pm.PackageManager;
-//import android.graphics.Bitmap;
-//import android.graphics.BitmapFactory;
-//import android.location.Address;
-//import android.location.Geocoder;
-//import android.location.Location;
-//import android.net.Uri;
-//import android.os.Bundle;
-//import android.provider.MediaStore;
-//import android.util.Base64;
-//import android.util.Log;
-//import android.widget.Toast;
-//import androidx.activity.result.ActivityResultLauncher;
-//import androidx.activity.result.contract.ActivityResultContracts;
-//import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
-//import androidx.appcompat.app.AppCompatActivity;
-//import androidx.core.app.ActivityCompat;
-//import com.example.stylescannerapp.databinding.ActivityMainBinding;
-//import com.google.android.gms.location.FusedLocationProviderClient;
-//import com.google.android.gms.location.LocationServices;
-//import java.io.ByteArrayOutputStream;
-//import java.io.IOException;
-//import java.util.List;
-//import java.util.Locale;
-//import retrofit2.Call;
-//import retrofit2.Callback;
-//import retrofit2.Response;
-//import android.app.AlertDialog;
-//import android.content.DialogInterface;
-//
-//
-//public class MainActivity extends AppCompatActivity {
-//
-//    // Tag for logging, helps identify logs related to this class
-//    private static final String TAG = "Topaz";
-//
-//    private ActivityMainBinding binding;
-//
-//    private Bitmap bitmap; // This variable holds the image captured or selected by the user
-//
-//    private Location mLocation; // This variable holds the user's current location
-//
-//    private FusedLocationProviderClient fusedLocationProviderClient; // Helps access device's location services
-//
-//    // Requests permission to access location
-//    private final ActivityResultLauncher<String> requestPermissionLauncher =
-//            registerForActivityResult(new ActivityResultContracts.RequestPermission(),
-//                    isGranted -> {
-//                        if (isGranted) {
-//                            getLastLocation(); // If permission granted, get location
-//                        } else {
-//                            Toast.makeText(MainActivity.this, "Permission Denied", Toast.LENGTH_SHORT).show(); // If denied, show a toast message
-//                        }
-//                    });
-//
-//    // Handles result from the camera activity
-//    private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
-//            new StartActivityForResult(),
-//            result -> {
-//                if (result.getResultCode() == RESULT_OK) {
-//                    bitmap = (Bitmap) result.getData().getExtras().get("data"); // If image is taken, store it in 'bitmap'
-//                    binding.image.setImageBitmap(bitmap); // Display image in the ImageView
-//                }
-//            });
-//
-//    // Handles result from gallery activity
-//    private final ActivityResultLauncher<Intent> galleryLauncher = registerForActivityResult(
-//            new StartActivityForResult(),
-//            result -> {
-//                if (result.getResultCode() == RESULT_OK) {
-//                    try {
-//                        Uri uri = result.getData().getData();
-//                        bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri); // Retrieve the image from gallery
-//                    } catch (Exception e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    binding.image.setImageBitmap(bitmap); // Display the selected image
-//                }
-//            });
-//
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        binding = ActivityMainBinding.inflate(getLayoutInflater()); // Initialize binding for the layout
-//        setContentView(binding.getRoot()); // Set the layout's root view
-//
-//        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this); // Initialize location services client
-//
-//        checkLocationPermission(); // Check if location permission is granted
-//
-//        binding.send.setOnClickListener(v -> {
-//            sendPhoto(); // Send the photo when the send button is clicked
-//        });
-//
-//        // Set up the click listener for the "Select Image" button
-//        binding.selectImage.setOnClickListener(view -> {
-//            showImageSourceDialog();  // Show a dialog to choose between camera or gallery
-//        });
-//    }
-//
-//    private void sendPhoto() {
-//        // Ensure the location is available before sending the image
-//        if (mLocation == null) {
-//            Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        // Convert the bitmap to base64 string
-//        String base64Image = bitmapToBase64(bitmap);
-//
-//        // Get the address from the location
-//        Address address = getAddressFromLocation(mLocation.getLatitude(), mLocation.getLongitude());
-//        if (address != null) {
-//            // Create the image object and send it
-//            Image image = new Image(base64Image, address.getCountryName(), address.getLocality());
-//
-//            ApiService apiService = RetrofitClient.getInstance().create(ApiService.class);
-//            apiService.uploadImageAndGetRange(image).enqueue(new Callback<PredictionResponse>() {
-//                @Override
-//                public void onResponse(Call<PredictionResponse> call, Response<PredictionResponse> response) {
-//                    if (response.isSuccessful() && response.body() != null) {
-//                        PredictionResponse prediction = response.body();
-//                        Log.d(TAG, "Min Range: " + prediction.getMinRange() + ", Max Range: " + prediction.getMaxRange());
-//                    } else {
-//                        Log.e(TAG, "Request Failed. Code: " + response.code());
-//                    }
-//                }
-//
-//                @Override
-//                public void onFailure(Call<PredictionResponse> call, Throwable t) {
-//                    Log.e(TAG, "Error: " + t.getMessage());
-//                }
-//            });
-//        }
-//    }
-//
-//
-//    // This method shows a dialog asking the user to choose the image source (camera or gallery)
-//    private void showImageSourceDialog() {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle("Select Image Source")  // Dialog title
-//                .setItems(new CharSequence[]{"Take Photo", "Choose from Gallery"}, new DialogInterface.OnClickListener() {
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        if (which == 0) {
-//                            openCamera();  // Open the camera if "Take Photo" is selected
-//                        } else {
-//                            openGallery();  // Open the gallery if "Choose from Gallery" is selected
-//                        }
-//                    }
-//                })
-//                .show();
-//    }
-//    private void openCamera() {
-//        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // Create intent to open camera
-//        cameraLauncher.launch(intent); // Launch the camera intent
-//    }
-//
-//    private void openGallery() {
-//        Intent intent = new Intent();
-//        intent.setType("image/*"); // Allow image selection
-//        intent.setAction(Intent.ACTION_GET_CONTENT); // Action to select content
-//        galleryLauncher.launch(intent); // Launch the gallery intent
-//    }
-//
-//    public static Bitmap base64ToBitmap(String base64String) {
-//        if (base64String == null) {
-//            return null;
-//        }
-//        byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT); // Decode base64 string to bytes
-//        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length); // Convert bytes to bitmap
-//    }
-//
-//    private String bitmapToBase64(Bitmap bitmap) {
-//        ByteArrayOutputStream boas = new ByteArrayOutputStream();
-//        return Base64.encodeToString(boas.toByteArray(), Base64.DEFAULT); // Convert bitmap to base64 string
-//    }
-//
-//    private void checkLocationPermission() {
-//        if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION)
-//                == PackageManager.PERMISSION_GRANTED) {
-//            getLastLocation(); // If permission is granted, fetch location
-//        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission.ACCESS_COARSE_LOCATION)) {
-//            Toast.makeText(this, "Location permission is required to get your location", Toast.LENGTH_LONG).show();
-//            requestPermissionLauncher.launch(permission.ACCESS_FINE_LOCATION); // Request permission if needed
-//        } else {
-//            requestPermissionLauncher.launch(permission.ACCESS_FINE_LOCATION); // Request permission if not granted yet
-//        }
-//    }
-//
-//    private void getLastLocation() {
-//        if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION)
-//                != PackageManager.PERMISSION_GRANTED) {
-//            return;
-//        }
-//        fusedLocationProviderClient.getLastLocation()
-//                .addOnCompleteListener(task -> {
-//                    if (task.isSuccessful() && task.getResult() != null) {
-//                        mLocation = task.getResult();
-//                    } else {
-//                        Toast.makeText(MainActivity.this, "Failed to get location", Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-//    }
-//
-//    private Address getAddressFromLocation(double latitude, double longitude) {
-//        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-//        try {
-//            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-//            if (addresses != null && !addresses.isEmpty()) {
-//                return addresses.get(0);
-//            } else {
-//                Toast.makeText(this, "No address found for the location", Toast.LENGTH_SHORT).show();
-//            }
-//        } catch (IOException e) {
-//            Log.e(TAG, "Error getting address: " + e.getMessage(), e);
-//            Toast.makeText(this, "Error getting address: " + e.getMessage(), Toast.LENGTH_LONG).show();
-//        }
-//        return null;
-//    }
-//}
 package com.example.stylescannerapp;
+
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.ImageDecoder;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
-import androidx.core.content.ContextCompat;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.example.stylescannerapp.databinding.ActivityMainBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Currency;
+import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * MainActivity:
+ * - Picks image (Camera / Photo Picker / Files).
+ * - Obtains location with FusedLocationProvider after runtime permissions.
+ * - Sends image + address to backend.
+ * - Renders prediction and converts from server base currency to local currency.
+ * - Uses ViewFlipper screens: [0]=main, [1]=loading, [2]=result.
+ */
 public class MainActivity extends AppCompatActivity {
 
-    private static final int PERMISSION_REQUEST_CODE = 100;
+    /** Request code for camera runtime permission (location uses Activity Result API). */
+    private static final int CAMERA_PERMISSION_REQUEST = 200;
 
+    /** Launchers for Photo Picker (API 33+), SAF (OpenDocument), and location permissions. */
+    private ActivityResultLauncher<PickVisualMediaRequest> photoPickerLauncher;
+    private ActivityResultLauncher<String[]> openDocumentLauncher;
+    private ActivityResultLauncher<String[]> locationPermsLauncher;
+
+    /** Fused location client. */
+    private FusedLocationProviderClient fused;
+
+    /** ViewBinding and screen container. */
     private ActivityMainBinding binding;
-    private Bitmap bitmap;
-    private Location currentLocation;
-    private FusedLocationProviderClient locationClient;
     private ViewFlipper viewFlipper;
 
+    /** In-memory image and last known location. */
+    private Bitmap bitmap;
+    private Location currentLocation;
+
+    /** Last country ISO for formatting and last FX state. */
+    private String lastCountryIso = "IL";
+    private String lastFxCurrency = "ILS";
+    private double lastFxRate = 1.0;
+
+    /** Activity Result: camera thumbnail capture flow. */
     private final ActivityResultLauncher<Intent> cameraLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    bitmap = (Bitmap) result.getData().getExtras().get("data");
-                    binding.uploadedImage.setImageBitmap(bitmap);
-                    showLoadingScreen();
-                    sendPhotoToServer();
-                }
-            });
-
-    private final ActivityResultLauncher<Intent> galleryLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    Uri selectedImageUri = result.getData().getData();
-                    try {
-                        bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
+                    Object extra = result.getData().getExtras() != null
+                            ? result.getData().getExtras().get("data") : null;
+                    if (extra instanceof Bitmap) {
+                        bitmap = (Bitmap) extra;
                         binding.uploadedImage.setImageBitmap(bitmap);
                         showLoadingScreen();
                         sendPhotoToServer();
-                    } catch (IOException e) {
-                        Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Camera returned no image", Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    Toast.makeText(this, "Camera cancelled", Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -299,87 +115,231 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        checkAndRequestPermissions();
 
-        locationClient = LocationServices.getFusedLocationProviderClient(this);
+        // Set ViewFlipper animations.
         viewFlipper = binding.viewFlipper;
         viewFlipper.setInAnimation(this, R.anim.slide_in_right);
         viewFlipper.setOutAnimation(this, R.anim.slide_out_left);
 
-        checkLocationPermission();
+        // Initialize fused location client.
+        fused = LocationServices.getFusedLocationProviderClient(this);
 
-        binding.selectImageButton.setOnClickListener(v -> openImageChooser());
-        binding.tryAgainButtonResult.setOnClickListener(v -> {
-            showMainScreen();
-            Toast.makeText(MainActivity.this, "Let's try again!", Toast.LENGTH_SHORT).show();
-        });
+        // Register location permission request launcher.
+        locationPermsLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> {
+                    Boolean fine = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
+                    Boolean coarse = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
+                    if (Boolean.TRUE.equals(fine) || Boolean.TRUE.equals(coarse)) {
+                        startLocationFlow();
+                    } else {
+                        Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
 
-        binding.tryAgainButtonLoading.setOnClickListener(v -> {
-            showMainScreen();
-            Toast.makeText(MainActivity.this, "Let's try again!", Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    private void openImageChooser() {
-        new AlertDialog.Builder(this)
-                .setTitle("Choose Image Source")
-                .setItems(new String[]{"Camera", "Gallery"}, (dialog, which) -> {
-                    if (which == 0) openCamera();
-                    else openGallery();
-                }).show();
-    }
-
-    private void checkAndRequestPermissions() {
-        List<String> permissionsNeeded = new ArrayList<>();
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
-            permissionsNeeded.add(Manifest.permission.CAMERA);
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
-            permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION);
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-            permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES);
-
-        if (!permissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(this,
-                    permissionsNeeded.toArray(new String[0]),
-                    PERMISSION_REQUEST_CODE);
+        // Register Photo Picker (API 33+).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            photoPickerLauncher = registerForActivityResult(
+                    new ActivityResultContracts.PickVisualMedia(),
+                    uri -> {
+                        if (uri == null) {
+                            Toast.makeText(this, "Selection cancelled", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        handleImageUriFromPicker(uri);
+                    }
+            );
         }
+
+        // Register SAF (OpenDocument) for all API levels.
+        openDocumentLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocument(),
+                uri -> { if (uri != null) handleImageUriFromSaf(uri); }
+        );
+
+        // Main button: open the image source chooser.
+        binding.selectImageButton.setOnClickListener(v -> openImageChooser());
+
+        // Result/loading buttons: return to main screen.
+        binding.tryAgainButtonResult.setOnClickListener(v -> showMainScreen());
+        binding.tryAgainButtonLoading.setOnClickListener(v -> showMainScreen());
+
+        // Start permission → location acquisition flow.
+        ensureLocationPerms();
     }
+
+    /** Shows a chooser: Camera / Gallery / Files. */
+    private void openImageChooser() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Choose Image Source")
+                .setItems(new String[]{"Camera", "Gallery (Albums)", "Browse device files"}, (d, which) -> {
+                    if (which == 0) openCamera();
+                    else if (which == 1) openGallery();
+                    else browseDeviceFiles();
+                })
+                .setNegativeButton("Cancel", (d, w) -> d.dismiss())
+                .show();
+    }
+
+    /** Requests camera permission if needed and launches camera capture. */
     private void openCamera() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 200);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    CAMERA_PERMISSION_REQUEST);
             return;
         }
-
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         cameraLauncher.launch(intent);
     }
 
+    /** Uses Photo Picker on API 33+, otherwise opens SAF (OpenDocument). */
     private void openGallery() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        galleryLauncher.launch(Intent.createChooser(intent, "Select Image"));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            photoPickerLauncher.launch(
+                    new PickVisualMediaRequest.Builder()
+                            .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                            .build()
+            );
+        } else {
+            openDocumentLauncher.launch(new String[]{"image/*"});
+        }
     }
 
-    private void sendPhotoToServer() {
-        if (currentLocation == null) {
-            Toast.makeText(this, "Location not available yet", Toast.LENGTH_SHORT).show();
-            showMainScreen();
-            return;
-        }
+    /** Opens the Files UI (SAF) directly. */
+    private void browseDeviceFiles() {
+        openDocumentLauncher.launch(new String[]{"image/*"});
+    }
 
+    /** Loads an image from Photo Picker result and triggers upload. */
+    private void handleImageUriFromPicker(@NonNull Uri uri) {
+        try {
+            Bitmap bmp = loadBitmapFromUri(uri);
+            if (bmp == null) {
+                Toast.makeText(this, "Failed to read image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            bitmap = bmp;
+            binding.uploadedImage.setImageBitmap(bmp);
+            showLoadingScreen();
+            sendPhotoToServer();
+        } catch (IOException e) {
+            Toast.makeText(this, "Failed to read image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** Takes persistable read permission for SAF Uri, decodes image, and triggers upload. */
+    private void handleImageUriFromSaf(@NonNull Uri uri) {
+        try {
+            getContentResolver().takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (SecurityException ignored) {}
+        try {
+            bitmap = loadBitmapFromUri(uri);
+            if (bitmap == null) {
+                Toast.makeText(this, "Failed to read image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            binding.uploadedImage.setImageBitmap(bitmap);
+            showLoadingScreen();
+            sendPhotoToServer();
+        } catch (IOException e) {
+            Toast.makeText(this, "Failed to read image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** Decodes a bitmap from a content Uri (ImageDecoder on API 28+, stream fallback below). */
+    private @Nullable Bitmap loadBitmapFromUri(@NonNull Uri uri) throws IOException {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            ImageDecoder.Source src = ImageDecoder.createSource(getContentResolver(), uri);
+            return ImageDecoder.decodeBitmap(src);
+        } else {
+            try (InputStream is = getContentResolver().openInputStream(uri)) {
+                return android.graphics.BitmapFactory.decodeStream(is);
+            }
+        }
+    }
+
+    /** Requests location permissions if missing and starts fetching a location when granted. */
+    private void ensureLocationPerms() {
+        boolean fineOk = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarseOk = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+
+        if (!fineOk && !coarseOk) {
+            locationPermsLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        } else {
+            startLocationFlow();
+        }
+    }
+
+    /**
+     * Attempts to get last known location; if null, requests a one-shot high-accuracy update.
+     */
+    private void startLocationFlow() {
+        boolean fineOk = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarseOk = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        if (!fineOk && !coarseOk) return;
+
+        fused.getLastLocation().addOnSuccessListener(last -> {
+            if (last != null) {
+                useLocation(last);
+            } else {
+                LocationRequest req = new LocationRequest.Builder(
+                        Priority.PRIORITY_HIGH_ACCURACY, 2000)
+                        .setMinUpdateIntervalMillis(1000)
+                        .setMaxUpdates(1)
+                        .build();
+
+                fused.requestLocationUpdates(req, new LocationCallback() {
+                    @Override public void onLocationResult(LocationResult res) {
+                        if (!res.getLocations().isEmpty()) {
+                            useLocation(res.getLastLocation());
+                        } else {
+                            Toast.makeText(MainActivity.this, "No location yet", Toast.LENGTH_SHORT).show();
+                        }
+                        fused.removeLocationUpdates(this);
+                    }
+                }, Looper.getMainLooper());
+            }
+        });
+    }
+
+    /** Stores a location fix and logs coordinates. */
+    private void useLocation(@NonNull Location loc) {
+        currentLocation = loc;
+        Log.d("LOC", "lat=" + loc.getLatitude() + ", lon=" + loc.getLongitude());
+    }
+
+    /**
+     * Encodes the bitmap to Base64, reverse-geocodes the location to Address,
+     * builds the payload, calls the backend, and handles the response.
+     */
+    private void sendPhotoToServer() {
         if (bitmap == null) {
             Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show();
             showMainScreen();
             return;
         }
+        if (currentLocation == null) {
+            binding.loadingText.setText("Getting location…");
+            startLocationFlow();
+            return;
+        }
 
         String encodedImage = bitmapToBase64(bitmap);
         Address address = getAddressFromLocation(currentLocation);
+
+        // Debug log of payload fields.
+        logDebugUploadPayload(encodedImage, address, currentLocation);
 
         if (address == null) {
             Toast.makeText(this, "Couldn't get address from location", Toast.LENGTH_SHORT).show();
@@ -387,119 +347,479 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        Image image = new Image(encodedImage, address.getCountryName(), address.getLocality());
+        if (address.getCountryCode() != null) {
+            lastCountryIso = address.getCountryCode();
+        }
 
-        ApiService apiService = RetrofitClient.getInstance().create(ApiService.class);
-        apiService.uploadImageAndGetRange(image).enqueue(new Callback<PredictionResponse>() {
+        // Payload model for backend.
+        Image image = new Image(
+                encodedImage,
+                address.getCountryName(),
+                address.getLocality()
+        );
+
+        // Log basic payload summary.
+        Log.i("PayloadCheck",
+                "POST /predictimage | country=" + address.getCountryName()
+                        + ", locality=" + address.getLocality()
+                        + ", iso=" + lastCountryIso
+                        + ", base64Len=" + encodedImage.length());
+
+        ApiService api = RetrofitClient.getInstance().create(ApiService.class);
+        api.uploadImageAndGetRange(image).enqueue(new Callback<PredictionResponse>() {
             @Override
-            public void onResponse(Call<PredictionResponse> call, Response<PredictionResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    showResultScreen(response.body());
+            public void onResponse(Call<PredictionResponse> call, Response<PredictionResponse> resp) {
+                if (resp.isSuccessful() && resp.body() != null) {
+                    PredictionResponse prediction = resp.body();
+
+                    // Per-item server debug log.
+                    if (prediction.items != null) {
+                        for (ItemResult it : prediction.items) {
+                            Log.i("ServerItems",
+                                    "Detected -> type=" + it.type +
+                                            ", color=" + it.color +
+                                            ", price=" + it.price);
+                        }
+                    }
+
+                    // Debug: USD item summary and raw JSON.
+                    logItemsUsd(prediction);
+                    logRawPredictionJson(prediction);
+
+                    // Render result UI.
+                    showResultScreen(prediction);
+
                 } else {
-                    showLoadingError("Failed to get response from server. Please try again later.");
+                    try {
+                        String rawError = resp.errorBody() != null ? resp.errorBody().string() : "";
+                        JSONObject obj = new JSONObject(rawError);
+                        String code = obj.optString("code");
+                        String errorMsg = obj.optString("error");
+
+                        if ("NO_CLOTHING_DETECTED".equals(code)) {
+                            showLoadingError("No clothing item detected. Please upload a clear clothing image.");
+                        } else {
+                            showLoadingError(errorMsg.isEmpty()
+                                    ? "Failed to get response from server. Please try again later."
+                                    : errorMsg);
+                        }
+
+                        Log.w("ServerError", "HTTP " + resp.code() + " code=" + code + " msg=" + errorMsg);
+
+                    } catch (Exception e) {
+                        Log.e("ServerError", "Failed to parse error body", e);
+                        showLoadingError("Failed to get response from server. Please try again later.");
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<PredictionResponse> call, Throwable t) {
-                Log.e("Topaz", "Connection failed: " + t.getMessage(), t);
-                showLoadingError("Cannot connect right now. \n Please try again in a few minutes.");
+                Log.e("Network", "Connection failed: " + t.getMessage(), t);
+                showLoadingError("Cannot connect to the server right now.\nPlease try again in a few minutes.");
             }
         });
     }
 
+    /** Shows an error message on loading screen and reveals Try Again button. */
     private void showLoadingError(String message) {
         binding.loadingText.setText(message);
-        binding.progressBar.setVisibility(View.GONE);
-        binding.tryAgainButtonLoading.setVisibility(View.VISIBLE);
-        viewFlipper.setDisplayedChild(1);  // Stay on loading screen
+        binding.progressBar.setVisibility(android.view.View.GONE);
+        binding.tryAgainButtonLoading.setVisibility(android.view.View.VISIBLE);
+        viewFlipper.setDisplayedChild(1);
     }
 
+    /** Resets UI to the main screen and clears the last image. */
     private void showMainScreen() {
         viewFlipper.setDisplayedChild(0);
         binding.loadingText.setText("What a stunning style!\n\nLet's see how much it's worth:");
-        binding.progressBar.setVisibility(View.VISIBLE);
-        binding.tryAgainButtonResult.setVisibility(View.GONE);
-        binding.tryAgainButtonLoading.setVisibility(View.GONE);
+        binding.progressBar.setVisibility(android.view.View.VISIBLE);
+        binding.tryAgainButtonResult.setVisibility(android.view.View.GONE);
+        binding.tryAgainButtonLoading.setVisibility(android.view.View.GONE);
         binding.uploadedImage.setImageBitmap(null);
         bitmap = null;
     }
 
+    /** Switches to loading screen before network calls. */
     private void showLoadingScreen() {
         viewFlipper.setDisplayedChild(1);
         binding.loadingText.setText("What a stunning style!\nLet's see how much it's worth:");
-        binding.progressBar.setVisibility(View.VISIBLE);
-        binding.tryAgainButtonLoading.setVisibility(View.GONE);
+        binding.progressBar.setVisibility(android.view.View.VISIBLE);
+        binding.tryAgainButtonLoading.setVisibility(android.view.View.GONE);
     }
 
-
-    private void showResultScreen(PredictionResponse prediction) {
+    /**
+     * Shows detected items sentence, converts base range to local currency,
+     * and renders the final text and image.
+     */
+    private void showResultScreen(@Nullable PredictionResponse prediction) {
         viewFlipper.setDisplayedChild(2);
 
-        String rangeText = "Your Style Value Range:" + prediction.getMinRange() + " - " + prediction.getMaxRange();
-        binding.styleValueRange.setText(rangeText);
+        boolean noItems = (prediction == null || prediction.items == null || prediction.items.isEmpty());
+        boolean zeros = prediction != null
+                && prediction.getMinRange() == 0.0
+                && prediction.getMaxRange() == 0.0
+                && prediction.getTotalPrice() == 0.0;
 
-        if (bitmap != null) {
-            binding.resultImage.setImageBitmap(bitmap);
-        }
-    }
-
-    private String bitmapToBase64(Bitmap bitmap) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
-        return Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-    }
-
-    private void checkLocationPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            getLastLocation();
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        }
-    }
-
-    private void getLastLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        if (noItems || zeros) {
+            String msg = "Unable to estimate this image because no clothing items were detected.";
+            binding.styleValueRange.setText(msg + "\n\nWant to measure another item? Click Try Again ↓");
+            if (bitmap != null) binding.resultImage.setImageBitmap(bitmap);
+            binding.tryAgainButtonResult.setVisibility(android.view.View.VISIBLE);
+            binding.tryAgainButtonResult.setOnClickListener(v -> showMainScreen());
             return;
+        }
 
-        locationClient.getLastLocation().addOnSuccessListener(location -> {
-            if (location != null) {
-                currentLocation = location;
-            } else {
-                Toast.makeText(this, "Could not retrieve location", Toast.LENGTH_SHORT).show();
-            }
-        });
+        String detectedSentence = buildDetectedSentence(prediction);
+
+        double lowBase = Math.min(prediction.getMinRange(), prediction.getMaxRange());
+        double highBase = Math.max(prediction.getMinRange(), prediction.getMaxRange());
+        binding.styleValueRange.setText(detectedSentence + "\n\nConverting price…");
+
+        String serverBaseCurrency = normalizeCurrency(
+                (prediction != null) ? prediction.currency : null
+        );
+        Log.i("FX_DEBUG", "Server base currency = " + serverBaseCurrency);
+
+        convertAndRender(prediction, lowBase, highBase, lastCountryIso, serverBaseCurrency);
+
+        if (bitmap != null) binding.resultImage.setImageBitmap(bitmap);
+
+        binding.tryAgainButtonResult.setVisibility(android.view.View.VISIBLE);
+        binding.tryAgainButtonResult.setOnClickListener(v -> showMainScreen());
     }
 
-    private Address getAddressFromLocation(Location location) {
+    /**
+     * Requests FX rate (amount=1) and renders converted range.
+     * If FX fails, renders base currency values.
+     */
+    private void convertAndRender(PredictionResponse prediction,
+                                  double minBase, double maxBase,
+                                  String targetCountryIso,
+                                  String serverBaseCurrency) {
+
+        String targetCurrencyCode = currencyForCountry(targetCountryIso).getCurrencyCode();
+
+        if (serverBaseCurrency.equalsIgnoreCase(targetCurrencyCode)) {
+            lastFxCurrency = targetCurrencyCode;
+            lastFxRate = 1.0;
+
+            String rangeLine = "Outfit value range (Min → Max): "
+                    + formatCurrencyForCountry(minBase, targetCountryIso)
+                    + " - "
+                    + formatCurrencyForCountry(maxBase, targetCountryIso);
+
+            String fxInfo = "FX: 1 " + serverBaseCurrency + " = 1.0 " + targetCurrencyCode + ".";
+
+            String finalText = buildDetectedSentence(prediction) + "\n\n" + rangeLine + "\n" + fxInfo
+                    + "\n\nWant to measure another item? Click Try Again ↓";
+            binding.styleValueRange.setText(finalText);
+            return;
+        }
+
+        String accessKey = (BuildConfig.EXCHANGERATE_API_KEY == null || BuildConfig.EXCHANGERATE_API_KEY.isEmpty())
+                ? null : BuildConfig.EXCHANGERATE_API_KEY;
+
+        FxApiService fx = RetrofitClient.getFxService();
+        fx.convert(serverBaseCurrency, targetCurrencyCode, 1.0, accessKey)
+                .enqueue(new retrofit2.Callback<FxResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<FxResponse> call, retrofit2.Response<FxResponse> resp) {
+                        if (resp.isSuccessful() && resp.body() != null && resp.body().result > 0) {
+                            lastFxCurrency = targetCurrencyCode;
+                            lastFxRate = resp.body().result;
+
+                            double lowTarget  = minBase * lastFxRate;
+                            double highTarget = maxBase * lastFxRate;
+
+                            String rangeLine = "Outfit value range (Min → Max): "
+                                    + formatCurrencyForCountry(lowTarget, targetCountryIso)
+                                    + " - "
+                                    + formatCurrencyForCountry(highTarget, targetCountryIso);
+
+                            String fxInfo = "FX: 1 " + serverBaseCurrency + " = "
+                                    + formatRate(lastFxRate) + " " + lastFxCurrency;
+
+                            String finalText = buildDetectedSentence(prediction) + "\n\n" + rangeLine + "\n" + fxInfo
+                                    + "\n\nWant to measure another item? Click Try Again ↓";
+                            binding.styleValueRange.setText(finalText);
+
+                        } else {
+                            lastFxCurrency = serverBaseCurrency;
+                            lastFxRate = 1.0;
+
+                            String baseIso = isoFromCurrency(serverBaseCurrency);
+
+                            String rangeLine = "Outfit value range (Min → Max): "
+                                    + formatCurrencyForCountry(minBase, baseIso)
+                                    + " - "
+                                    + formatCurrencyForCountry(maxBase, baseIso);
+
+                            String fxInfo = "FX: failed, showing " + serverBaseCurrency;
+
+                            String finalText = buildDetectedSentence(prediction) + "\n\n" + rangeLine + "\n" + fxInfo
+                                    + "\n\nWant to measure another item? Click Try Again ↓";
+                            binding.styleValueRange.setText(finalText);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<FxResponse> call, Throwable t) {
+                        lastFxCurrency = serverBaseCurrency;
+                        lastFxRate = 1.0;
+
+                        String baseIso = isoFromCurrency(serverBaseCurrency);
+
+                        String rangeLine = "Outfit value range (Min → Max): "
+                                + formatCurrencyForCountry(minBase, baseIso)
+                                + " - "
+                                + formatCurrencyForCountry(maxBase, baseIso);
+
+                        String fxInfo = "FX: failed, showing " + serverBaseCurrency;
+
+                        String finalText = buildDetectedSentence(prediction) + "\n\n" + rangeLine + "\n" + fxInfo
+                                + "\n\nWant to measure another item? Click Try Again ↓";
+                        binding.styleValueRange.setText(finalText);
+                    }
+                });
+    }
+
+    /** Builds a short sentence that lists detected items (color + type). */
+    private String buildDetectedSentence(@Nullable PredictionResponse prediction) {
+        if (prediction == null || prediction.items == null || prediction.items.isEmpty()) {
+            return "I couldn't detect specific items in the image.";
+        }
+        List<String> parts = new ArrayList<>();
+        for (ItemResult it : prediction.items) {
+            String color = (it != null && it.color != null) ? cap(it.color) : "Unknown";
+            String type  = (it != null && it.type  != null) ? cap(it.type)  : "Item";
+            parts.add(color + " " + type);
+        }
+        if (parts.size() == 1) return "I detect you wore: " + parts.get(0) + ".";
+        if (parts.size() == 2) return "I detect you wore: " + parts.get(0) + " and " + parts.get(1) + ".";
+        StringBuilder sb = new StringBuilder("I detect you wore: ");
+        for (int i = 0; i < parts.size(); i++) {
+            if (i > 0) sb.append(i == parts.size() - 1 ? " and " : ", ");
+            sb.append(parts.get(i));
+        }
+        sb.append(".");
+        return sb.toString();
+    }
+
+    /** Normalizes currency to ISO codes and defaults to USD. */
+    private String normalizeCurrency(String c) {
+        if (c == null) return "USD";
+        String t = c.trim();
+        if (t.isEmpty()) return "USD";
+        if (t.equals("$")) return "USD";
+        if (t.equals("₪")) return "ILS";
+        if (t.equals("£")) return "GBP";
+        if (t.equals("€")) return "EUR";
+        return t.toUpperCase(Locale.ROOT);
+    }
+
+    /** Capitalizes first character of a string. */
+    private String cap(String s) {
+        if (s == null || s.isEmpty()) return s;
+        String lower = s.toLowerCase(Locale.getDefault());
+        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+    }
+
+    /** Formats a value to currency according to a country ISO (e.g., "IL" -> ILS). */
+    private String formatCurrencyForCountry(double value, String countryIso) {
+        Locale locale = new Locale("", countryIso);
+        NumberFormat nf = NumberFormat.getCurrencyInstance(locale);
+        nf.setCurrency(currencyForCountry(countryIso));
+        nf.setMinimumFractionDigits(2);
+        nf.setMaximumFractionDigits(2);
+        return nf.format(value);
+    }
+
+    /** Returns Currency by country ISO with ILS fallback. */
+    private Currency currencyForCountry(String countryIso) {
+        try {
+            return Currency.getInstance(new Locale("", countryIso));
+        } catch (Exception e) {
+            return Currency.getInstance("ILS");
+        }
+    }
+
+    /** Maps currency code to a representative country ISO (for NumberFormat locale). */
+    private String isoFromCurrency(String currencyCode) {
+        if (currencyCode == null) return "IL";
+        switch (currencyCode.toUpperCase(Locale.ROOT)) {
+            case "USD": return "US";
+            case "EUR": return "FR";
+            case "GBP": return "GB";
+            case "ILS": return "IL";
+            case "AUD": return "AU";
+            case "CAD": return "CA";
+            case "JPY": return "JP";
+            default:    return "US";
+        }
+    }
+
+    /** Formats FX rate to a readable string. */
+    private String formatRate(double r) {
+        return new DecimalFormat("#,##0.####").format(r);
+    }
+
+    /** Returns current local timestamp string. */
+    private String nowString() {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
+    }
+
+    /** Compresses bitmap to JPEG and encodes as Base64 without line breaks. */
+    private String bitmapToBase64(Bitmap bmp) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.JPEG, 90, baos);
+        byte[] bytes = baos.toByteArray();
+        return Base64.encodeToString(bytes, Base64.NO_WRAP);
+    }
+
+    /** Reverse-geocodes lat/lon to a single Address. */
+    private Address getAddressFromLocation(@NonNull Location location) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
-            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            List<Address> addresses = geocoder.getFromLocation(
+                    location.getLatitude(), location.getLongitude(), 1);
             return (addresses != null && !addresses.isEmpty()) ? addresses.get(0) : null;
         } catch (IOException e) {
-            Log.e("Topaz", "Geocoder failed", e);
+            Log.e("Geocoder", "Failed", e);
             return null;
         }
     }
 
+    /** Camera permission callback (location permissions use Activity Result API). */
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            for (int i = 0; i < permissions.length; i++) {
-                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d("Permissions", permissions[i] + " granted");
-                } else {
-                    Log.e("Permissions", permissions[i] + " denied");
-                }
-            }
-        } else if (requestCode == 200) {
+        if (requestCode == CAMERA_PERMISSION_REQUEST) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 openCamera();
             } else {
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    // ====================== DEBUG HELPERS (code-behavior-only comments) ======================
+
+    /** When true, logs full Base64 image string; when false, logs only head/tail. */
+    private static final boolean DEBUG_LOG_FULL_IMAGE = false;
+    /** Number of Base64 characters to log from head/tail when full logging is disabled. */
+    private static final int DEBUG_IMAGE_HEAD_TAIL = 64;
+
+    /** Returns a safe substring between indices. */
+    private String safeSubstr(String s, int start, int end) {
+        if (s == null) return null;
+        int n = s.length();
+        if (start < 0) start = 0;
+        if (end > n) end = n;
+        if (start >= end) return "";
+        return s.substring(start, end);
+    }
+
+    /** Computes MD5 hex digest of a string. */
+    private String md5Hex(String s) {
+        if (s == null) return null;
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] dig = md.digest(s.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : dig) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
+
+    /** Logs payload fields that are sent to the backend. */
+    private void logDebugUploadPayload(String base64, Address address, Location loc) {
+        if (!BuildConfig.DEBUG) return;
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonObject jo = new JsonObject();
+
+        if (address != null) {
+            jo.addProperty("country", address.getCountryName());
+            jo.addProperty("countryCode", address.getCountryCode());
+            jo.addProperty("locality", address.getLocality());
+        }
+        if (loc != null) {
+            jo.addProperty("latitude",  loc.getLatitude());
+            jo.addProperty("longitude", loc.getLongitude());
+        }
+
+        if (base64 != null) {
+            jo.addProperty("image_base64_len", base64.length());
+            jo.addProperty("image_base64_md5", md5Hex(base64));
+            if (DEBUG_LOG_FULL_IMAGE) {
+                jo.addProperty("image_base64_full", base64);
+            } else {
+                String head = safeSubstr(base64, 0, Math.min(DEBUG_IMAGE_HEAD_TAIL, base64.length()));
+                String tail = safeSubstr(base64, Math.max(0, base64.length() - DEBUG_IMAGE_HEAD_TAIL), base64.length());
+                jo.addProperty("image_base64_head", head);
+                jo.addProperty("image_base64_tail", tail);
+            }
+        }
+
+        Log.i("UPLOAD_PAYLOAD", gson.toJson(jo));
+    }
+
+    /** Logs brand/section/type/color/price per item in USD and USD ranges/total. */
+    private void logItemsUsd(PredictionResponse p) {
+        if (!BuildConfig.DEBUG || p == null) return;
+        NumberFormat usd = NumberFormat.getCurrencyInstance(Locale.US);
+        try { usd.setCurrency(Currency.getInstance("USD")); } catch (Exception ignore) {}
+
+        Log.i("PRICE_USD", "---- Items (USD) ----");
+        if (p.items != null && !p.items.isEmpty()) {
+            Gson gson = new Gson();
+            int i = 1;
+            for (ItemResult it : p.items) {
+                JsonObject jo = gson.toJsonTree(it).getAsJsonObject();
+
+                String brand   = (jo.has("brand")   && !jo.get("brand").isJsonNull())   ? jo.get("brand").getAsString()
+                        : (jo.has("brandName") && !jo.get("brandName").isJsonNull()) ? jo.get("brandName").getAsString() : null;
+                String section = (jo.has("section") && !jo.get("section").isJsonNull()) ? jo.get("section").getAsString() : null;
+                String type    = (jo.has("type")    && !jo.get("type").isJsonNull())    ? jo.get("type").getAsString()    : null;
+                String color   = (jo.has("color")   && !jo.get("color").isJsonNull())   ? jo.get("color").getAsString()   : null;
+                double price   = (jo.has("price")   && !jo.get("price").isJsonNull())   ? jo.get("price").getAsDouble()   : 0.0;
+
+                String label   = (brand  != null ? brand + " " : "")
+                        + (color  != null ? cap(color) + " " : "")
+                        + (type   != null ? cap(type)  : "Item");
+
+                Log.i("PRICE_USD", i + ") " + label
+                        + " | section=" + (section != null ? section : "-")
+                        + " | brand="   + (brand   != null ? brand   : "-")
+                        + " | type="    + (type    != null ? type    : "-")
+                        + " | color="   + (color   != null ? color   : "-")
+                        + " | price="   + usd.format(price));
+                i++;
+            }
+        } else {
+            Log.i("PRICE_USD", "(no items)");
+        }
+
+        double low  = Math.min(p.getMinRange(), p.getMaxRange());
+        double high = Math.max(p.getMinRange(), p.getMaxRange());
+        Log.i("PRICE_USD", "Range (min→max): " + usd.format(low) + " - " + usd.format(high));
+        Log.i("PRICE_USD", "Total: " + usd.format(p.getTotalPrice()));
+    }
+
+    /** Logs the full prediction object as pretty JSON. */
+    private void logRawPredictionJson(PredictionResponse p) {
+        if (!BuildConfig.DEBUG || p == null) return;
+        try {
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Log.i("PREDICT_RAW", gson.toJson(p));
+        } catch (Exception e) {
+            Log.w("PREDICT_RAW", "Failed to print raw JSON", e);
         }
     }
 }
